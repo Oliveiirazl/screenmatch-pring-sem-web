@@ -3,11 +3,18 @@ package br.com.api.screenmatch.app;
 import br.com.api.screenmatch.model.DadosEpisodiosModel;
 import br.com.api.screenmatch.model.DadosSerieModel;
 import br.com.api.screenmatch.model.DadosTemporadaModel;
+import br.com.api.screenmatch.model.EpisodioModel;
 import br.com.api.screenmatch.service.ConsumoApiService;
 import br.com.api.screenmatch.service.ConverteDadosService;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class PrincipalScreenmatchApplication {
 
@@ -36,6 +43,30 @@ public class PrincipalScreenmatchApplication {
         } temporadas.forEach(System.out::println);
 
         temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
+
+        List<DadosEpisodiosModel> dadosEpisodios = temporadas.stream().flatMap(t -> t.episodios().stream()).collect(Collectors.toList());
+        dadosEpisodios.stream().filter(e -> !e.avaliacao().equalsIgnoreCase("N/A")).sorted(Comparator.comparing(DadosEpisodiosModel::avaliacao)
+                .reversed()).limit(5).forEach(System.out::println);
+
+        List<EpisodioModel> episodios = temporadas.stream()
+                .flatMap(t -> t.episodios().stream()
+                        .map(d -> new EpisodioModel(t.numero(),d))
+        ).collect(Collectors.toList());
+
+        episodios.forEach(System.out::println);
+
+        System.out.println("A partir de qual ano deseja ver os episodios?");
+        var ano = scanner.nextInt();
+        scanner.nextLine();
+
+        LocalDate dataBusca = LocalDate.of(ano, 1, 1);
+
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        episodios.stream().filter(e -> e.getDataLancamento() != null && e.getDataLancamento().isAfter(dataBusca))
+                .forEach(e -> System.out.println("Temporada: " + e.getTemporada() + "Episodio: " + e.getTitulo() +
+                        "Data lançamento: " + e.getDataLancamento().format(formatador)));
+
 
     }
 }
